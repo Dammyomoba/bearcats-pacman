@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>UC Pac-Man &mdash; 3 Ghosts</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#E00122;--gold:#FFB700;--dark:#1a1a2e;--black:#000;}
+body{background:var(--black);color:#f0f0f0;font-family:"Courier New",monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+
+/* header */
+#hdr{width:100%;background:var(--dark);border-bottom:4px solid var(--red);padding:10px 22px;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+#hdr img{height:44px;filter:brightness(0) invert(1);}
+#hdr .ht h1{font-size:16px;font-weight:bold;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+#hdr .ht .sub{font-size:10px;color:#aaa;letter-spacing:1px;margin-top:2px;}
+.badge{margin-left:auto;background:var(--red);color:#fff;font-size:12px;font-weight:bold;padding:5px 14px;border-radius:2px;letter-spacing:1px;}
+
+/* welcome */
+#welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:84vh;padding:28px 14px;}
+.wcard{background:var(--dark);border:2px solid var(--red);border-radius:6px;max-width:530px;width:100%;overflow:hidden;}
+.whead{background:var(--red);padding:20px 26px;text-align:center;}
+.whead img{height:54px;filter:brightness(0) invert(1);display:block;margin:0 auto 8px;}
+.whead h2{font-size:20px;font-weight:bold;color:#fff;letter-spacing:3px;text-transform:uppercase;}
+.whead p{font-size:11px;color:rgba(255,255,255,.8);margin-top:3px;letter-spacing:1px;}
+.wbody{padding:24px 28px;display:flex;flex-direction:column;gap:16px;}
+.story{background:#0d0d1a;border-left:3px solid var(--gold);padding:12px 14px;font-size:12px;color:#ccc;line-height:1.8;font-family:system-ui,sans-serif;border-radius:0 3px 3px 0;}
+.story strong{color:var(--gold);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.field label{display:block;font-size:9px;color:#777;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+.field input{width:100%;background:#000;border:2px solid #333;color:#fff;font-family:"Courier New",monospace;font-size:14px;padding:8px 11px;border-radius:2px;outline:none;transition:border-color .15s;}
+.field input:focus{border-color:var(--gold);}
+.srow{display:flex;align-items:center;gap:12px;}
+.srow label{font-size:10px;color:#777;letter-spacing:1px;white-space:nowrap;}
+.srow select{background:#000;border:2px solid #333;color:var(--gold);font-family:"Courier New",monospace;font-size:13px;padding:7px 10px;border-radius:2px;outline:none;cursor:pointer;flex:1;}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.chip{background:#0d0d1a;border:1px solid #2a2a3e;padding:8px 6px;text-align:center;border-radius:3px;}
+.chip .cv{font-size:18px;font-weight:bold;color:var(--gold);}
+.chip .cl{font-size:9px;color:#555;letter-spacing:1px;margin-top:2px;font-family:system-ui,sans-serif;}
+#startBtn{background:var(--red);color:#fff;border:none;font-family:"Courier New",monospace;font-size:15px;font-weight:bold;padding:13px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;border-radius:3px;transition:background .15s;width:100%;}
+#startBtn:hover{background:#ff1a37;}
+.notice{font-size:10px;color:#333;text-align:center;font-family:system-ui,sans-serif;}
+
+/* game */
+#gameWrapper{display:none;flex-direction:column;align-items:center;width:100%;padding:7px 4px 18px;}
+#gameArea{display:flex;align-items:flex-start;gap:8px;width:100%;max-width:1080px;}
+.panel{background:var(--dark);border:1px solid #2a2a3e;border-top:3px solid var(--red);padding:9px 8px;display:flex;flex-direction:column;gap:10px;min-width:148px;flex:0 0 148px;font-size:11px;}
+.plogo{width:100%;max-width:106px;margin:0 auto;display:block;filter:brightness(0) invert(1);}
+.psec h3{color:var(--gold);font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a3e;padding-bottom:3px;margin-bottom:6px;}
+.bv{font-size:26px;font-weight:bold;color:#64C864;line-height:1;}
+.bv.red{color:var(--red);}.bv.gold{color:var(--gold);}
+.gl{display:flex;flex-direction:column;gap:4px;}
+.gi{display:flex;align-items:center;gap:5px;font-size:10px;padding:3px 5px;border-radius:2px;background:#0d0d1a;border-left:3px solid #333;}
+.gi.active{border-left-color:var(--gold);background:#1a1500;}.gi.done{border-left-color:#64C864;opacity:.5;}
+.gdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.sr{display:flex;justify-content:space-between;font-size:11px;padding:1px 0;}
+.sl{color:#666;}.sv{color:#f0f0f0;font-weight:bold;}
+.sv.g{color:#64C864;}.sv.r{color:var(--red);}.sv.o{color:var(--gold);}
+#ptag{font-size:10px;color:#888;line-height:1.5;word-break:break-all;}
+#ptag strong{color:var(--gold);display:block;font-size:11px;}
+#cwrap{flex:1;display:flex;flex-direction:column;align-items:center;}
+#gc{display:block;border:2px solid #2a2a3e;cursor:none;max-width:100%;}
+#tbar{width:100%;margin-top:5px;}
+#tlbl{font-size:9px;color:#555;letter-spacing:1px;margin-bottom:2px;}
+#ttrack{width:100%;height:5px;background:#1a1a2e;border-radius:3px;overflow:hidden;}
+#tfill{height:100%;background:#64C864;border-radius:3px;transition:width .1s linear,background .3s;}
+#hint{margin-top:5px;font-size:9px;color:#444;text-align:center;}
+#hint span{color:#666;}
+
+/* end overlay */
+#end{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center;}
+#end.show{display:flex;}
+#ecard{background:var(--dark);border:2px solid var(--red);border-radius:6px;padding:32px 38px;display:flex;flex-direction:column;align-items:center;gap:15px;max-width:460px;width:90%;text-align:center;}
+#etitle{font-size:36px;font-weight:bold;letter-spacing:4px;}
+#eout{color:#ccc;font-size:13px;font-family:system-ui,sans-serif;}
+#estats{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;}
+.es{background:#0d0d1a;padding:10px;border:1px solid #2a2a3e;border-radius:2px;}
+.ev{font-size:21px;font-weight:bold;color:var(--gold);}.el{font-size:9px;color:#555;letter-spacing:1px;font-family:system-ui,sans-serif;margin-top:2px;}
+#sst{font-size:11px;color:#888;font-family:system-ui,sans-serif;min-height:18px;}
+#sst.ok{color:#64C864;}.sst.err{color:var(--red);}
+.brow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.btn{border:none;font-family:"Courier New",monospace;font-size:13px;font-weight:bold;padding:10px 26px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;border-radius:2px;}
+.btn-gold{background:var(--gold);color:#000;}
+.btn-gold:hover{background:#ffd040;}
+.btn-red{background:var(--red);color:#fff;transition:background .15s;}
+.btn-red:hover{background:#ff1a37;}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <img src="uclogo1.png" alt="UC" onerror="this.style.display='none'"/>
+  <div class="ht">
+    <h1>University of Cincinnati</h1>
+    <div class="sub">BEARCATS PAC-MAN &mdash; HUMAN STUDY</div>
+  </div>
+  <div class="badge">3 Ghosts</div>
+</div>
+
+<div id="welcome">
+  <div class="wcard">
+    <div class="whead">
+      <img src="uclogo1.png" alt="UC Logo" onerror="this.style.display='none'"/>
+      <h2>Welcome to UC Pac-Man</h2>
+      <p>Human Decision-Making Research Study</p>
+    </div>
+    <div class="wbody">
+      <div class="story">
+        <strong>Your Mission: Earn Your Degree!</strong><br/>
+        You are a UC Bearcat navigating campus life. Collect your
+        <strong>4 academic milestones</strong> scattered across the maze to earn
+        your degree. But watch out &mdash; <strong>academic obstacles</strong>
+        (failed exams, deadlines, scheduling conflicts, and tuition bills) are
+        hunting you from every corner of campus. Dodge them, collect your
+        knowledge dots, and reach <strong>all 4 degree goals</strong> before
+        the clock runs out. Good luck, Bearcat!
+      </div>
+
+      <div class="fgrid">
+        <div class="field"><label>First Name</label><input id="fn" type="text" placeholder="Jane" maxlength="30" autocomplete="given-name"/></div>
+        <div class="field"><label>Last Name</label><input id="ln" type="text" placeholder="Smith" maxlength="30" autocomplete="family-name"/></div>
+        <div class="field"><label>M Number</label><input id="mn" type="text" placeholder="M12345678" maxlength="12"/></div>
+      </div>
+
+      <div class="srow">
+        <label>SPEED LEVEL</label>
+        <select id="spd">
+        <option value="1.0" selected>Slow (1.0)</option>
+        <option value="1.4">Normal (1.4)</option>
+        <option value="1.9">Fast (1.9)</option>
+        <option value="2.5">Very Fast (2.5)</option>
+        </select>
+      </div>
+
+      <div class="chips">
+        <div class="chip"><div class="cv">3</div><div class="cl">OBSTACLES</div></div>
+        <div class="chip"><div class="cv">4</div><div class="cl">GOALS</div></div>
+        <div class="chip"><div class="cv">60s</div><div class="cl">TIME LIMIT</div></div>
+      </div>
+
+      <button id="startBtn">Start Game</button>
+      <p class="notice">Your name, M Number, and all in-game decisions are recorded for research.</p>
+    </div>
+  </div>
+</div>
+
+<div id="gameWrapper">
+  <div id="gameArea">
+    <div class="panel">
+      <img class="plogo" src="uclogo1.png" alt="UC" onerror="this.style.display='none'"/>
+      <div class="psec">
+        <h3>Player</h3>
+        <div id="ptag"><strong id="pname">&mdash;</strong><span id="pmno"></span></div>
+      </div>
+      <div class="psec">
+        <h3>Milestones</h3>
+        <div class="gl" id="goalList"></div>
+      </div>
+      <div class="psec">
+        <h3>Distance</h3>
+        <div class="bv gold" id="distV">&mdash;</div>
+        <div style="font-size:9px;color:#555">cells to target</div>
+      </div>
+      <div class="psec">
+        <h3>Direction</h3>
+        <div style="font-size:12px" id="dirV">IDLE</div>
+      </div>
+    </div>
+
+    <div id="cwrap">
+      <canvas id="gc" tabindex="0"></canvas>
+      <div id="tbar">
+        <div id="tlbl">TIME REMAINING</div>
+        <div id="ttrack"><div id="tfill" style="width:100%"></div></div>
+      </div>
+      <div id="hint"><span>Arrow Keys</span> or <span>WASD</span> to move &nbsp;|&nbsp; collect all 4 milestones to graduate!</div>
+    </div>
+
+    <div class="panel">
+      <img class="plogo" src="uclogo1.png" alt="UC" onerror="this.style.display='none'"/>
+      <div class="psec"><h3>Progress</h3><div class="bv" id="progV">0/4</div></div>
+      <div class="psec"><h3>Knowledge</h3><div class="bv gold" id="scoreV">0</div><div style="font-size:9px;color:#555" id="dotF"></div></div>
+      <div class="psec"><h3>Time Left</h3><div class="bv" id="timeV">60.0s</div></div>
+      <div class="psec"><h3>Status</h3><div style="font-size:11px" id="statV">IN PROGRESS</div></div>
+      <div class="psec">
+        <h3>Events</h3>
+        <div class="sr"><span class="sl">collisions</span><span class="sv r" id="collV">0</span></div>
+        <div class="sr"><span class="sl">near-miss</span><span class="sv o" id="nearV">0</span></div>
+      </div>
+      <div class="psec">
+        <h3>Obstacles</h3>
+        <div class="sr"><span class="sl">count</span><span class="sv">3</span></div>
+        <div class="sr"><span class="sl">speed</span><span class="sv" id="spdV">&mdash;</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="end">
+  <div id="ecard">
+    <div id="etitle">&mdash;</div>
+    <div id="eout"></div>
+    <div id="estats">
+      <div class="es"><div class="ev" id="e-goals">0/4</div><div class="el">MILESTONES</div></div>
+      <div class="es"><div class="ev" id="e-score">0</div><div class="el">KNOWLEDGE</div></div>
+      <div class="es"><div class="ev" id="e-time">0s</div><div class="el">ELAPSED</div></div>
+      <div class="es"><div class="ev" id="e-coll">0</div><div class="el">COLLISIONS</div></div>
+    </div>
+    <div id="sst"></div>
+    <div class="brow">
+      <button class="btn btn-gold" id="dlBtn">Download CSV</button>
+      <button class="btn btn-red" id="reBtn">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+<script>
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9hmqwJ8G2yJxvvKE6xD9kuwz7zyZK0ZvNMj-V0mR_8F826B-ExJRCZkBHhJroNS8t/exec";
+const NG = 3;
+const GCOLS = ["#32C832","#14A014","#90EE90","#00C864"];
+let firstName="",lastName="",mNumber="",speed=1.6,handle=null,lastGame=null;
+
+// HUD -- called every frame by game.js
+window._ucHUD = function(g) {
+  // goal list
+  const gl=document.getElementById("goalList");
+  const key=g.allGoals.map((goal,i)=>i+":"+(g.collected.some(c=>c[0]===goal[0]&&c[1]===goal[1])?"d":g.goal&&goal[0]===g.goal[0]&&goal[1]===g.goal[1]?"a":"n")).join();
+  if(gl.dataset.k!==key){
+    gl.dataset.k=key; gl.innerHTML="";
+    const qn=["NW","NE","SW","SE"];
+    g.allGoals.forEach((goal,i)=>{
+      const done=g.collected.some(c=>c[0]===goal[0]&&c[1]===goal[1]);
+      const active=g.goal&&goal[0]===g.goal[0]&&goal[1]===g.goal[1];
+      const d=document.createElement("div");
+      d.className="gi"+(active?" active":"")+(done?" done":"");
+      d.innerHTML='<div class="gdot" style="background:'+GCOLS[i%4]+'"></div>'
+        +'<span style="color:#ccc;font-size:9px">'+qn[i%4]+' ('+goal[0]+','+goal[1]+')</span>'
+        +'<span style="margin-left:auto">'+(done?'&#10003;':active?'&rarr;':'')+'</span>';
+      gl.appendChild(d);
+    });
+  }
+  // panels
+  const dn={"-1,0":"UP","1,0":"DOWN","0,-1":"LEFT","0,1":"RIGHT","0,0":"IDLE"};
+  document.getElementById("distV").textContent=g.goal?(g.remaining.length?'?':'&mdash;'):'&mdash;';
+  document.getElementById("dirV").textContent=dn[g.player.dir[0]+","+g.player.dir[1]]||"IDLE";
+  document.getElementById("progV").textContent=g.goalsCollected+"/4";
+  document.getElementById("scoreV").textContent=g.score;
+  document.getElementById("dotF").textContent="/ "+g.initialDots+" dots";
+  const tl=g.timeLeft();
+  const tv=document.getElementById("timeV");
+  tv.textContent=tl.toFixed(1)+"s";
+  tv.className="bv"+(tl>15?"":tl>8?" gold":" red");
+  document.getElementById("statV").textContent=g.status.replace("_"," ");
+  document.getElementById("collV").textContent=g.collisions;
+  document.getElementById("nearV").textContent=g.nearMisses;
+  document.getElementById("spdV").textContent=g.speed+" px/f";
+  document.getElementById("tfill").style.width=(tl/60*100)+"%";
+  document.getElementById("tfill").style.background=tl>20?"#64C864":tl>10?"#FFB700":"#E00122";
+};
+
+function startGame(){
+  document.getElementById("welcome").style.display="none";
+  document.getElementById("gameWrapper").style.display="flex";
+  document.getElementById("pname").textContent=firstName+" "+lastName;
+  document.getElementById("pmno").textContent=mNumber;
+  document.getElementById("goalList").innerHTML="";
+  document.getElementById("goalList").dataset.k="";
+  const canvas=document.getElementById("gc");
+  if(handle) handle.stop();
+  handle=UCPacman.init({canvas,numGhosts:NG,speed,onEnd:g=>{lastGame=g;showEnd(g);}});
+  canvas.focus();
+}
+
+function showEnd(g){
+  const el=document.getElementById("end");
+  const et=document.getElementById("etitle");
+  et.textContent=g.status;
+  et.style.color=g.status==="SUCCESS"?"#64C864":"#E00122";
+  document.getElementById("eout").textContent=g.outcome;
+  document.getElementById("e-goals").textContent=g.goalsCollected+"/4";
+  document.getElementById("e-score").textContent=g.score;
+  document.getElementById("e-time").textContent=g.elapsed().toFixed(1)+"s";
+  document.getElementById("e-coll").textContent=g.collisions;
+  document.getElementById("sst").textContent="";
+  el.classList.add("show");
+  submitData(g);
+}
+
+async function submitData(g){
+  const st=document.getElementById("sst");
+  if(!GOOGLE_SCRIPT_URL||GOOGLE_SCRIPT_URL==="YOUR_GOOGLE_APPS_SCRIPT_URL_HERE"){
+    st.textContent="No server URL set. CSV saved locally."; return;
+  }
+  st.textContent="Submitting data...";
+  try{
+    await fetch(GOOGLE_SCRIPT_URL,{
+      method:"POST",mode:"no-cors",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        session_id:"sess_"+Date.now()+"_"+Math.random().toString(36).slice(2,6),
+        player_name:firstName+" "+lastName,
+        first_name:firstName,last_name:lastName,m_number:mNumber,
+        summary:{status:g.status,goals_collected:g.goalsCollected,num_goals:4,
+          score:g.score,initial_dots:g.initialDots,elapsed:+g.elapsed().toFixed(2),
+          collisions:g.collisions,near_misses:g.nearMisses,outcome:g.outcome,
+          num_ghosts:NG,speed:g.speed,timestamp:new Date().toISOString()},
+        log:g.log
+      })
+    });
+    st.className="ok"; st.textContent="Data submitted successfully.";
+  }catch(e){st.className="err";st.textContent="Submit failed: "+e.message;}
+}
+
+function dlCSV(){
+  if(!lastGame) return;
+  const csv=lastGame.buildCSV(firstName,lastName,mNumber);
+  const safe=s=>s.replace(/[^a-zA-Z0-9]/g,"_");
+  const fname=safe(lastName)+"_"+safe(firstName)+"_"+safe(mNumber)+"_"+NG+"ghost_spd"+lastGame.speed+".csv";
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download=fname; a.click();
+}
+
+document.getElementById("startBtn").addEventListener("click",()=>{
+  firstName=document.getElementById("fn").value.trim();
+  lastName=document.getElementById("ln").value.trim();
+  mNumber=document.getElementById("mn").value.trim();
+  if(!firstName||!lastName||!mNumber){alert("Please enter First Name, Last Name, and M Number.");return;}
+  speed=parseFloat(document.getElementById("spd").value);
+  startGame();
+});
+["fn","ln","mn"].forEach(id=>document.getElementById(id).addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("startBtn").click();}));
+document.getElementById("dlBtn").addEventListener("click",dlCSV);
+document.getElementById("reBtn").addEventListener("click",()=>{
+  document.getElementById("end").classList.remove("show");
+  startGame();
+});
+document.getElementById("gc").addEventListener("click",()=>document.getElementById("gc").focus());
+</script>
+</body>
+</html>
